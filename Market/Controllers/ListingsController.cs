@@ -15,9 +15,12 @@ namespace Market.Controllers
     {
         private readonly IListingsService _listingsService;
 
-        public ListingsController(IListingsService ListingService)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        public ListingsController(IListingsService ListingService, IWebHostEnvironment webHostEnvironment)
         {
             _listingsService = ListingService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // GET: Listings
@@ -27,8 +30,8 @@ namespace Market.Controllers
             return View(await applicationDbContext.ToListAsync());
         }
 
-        // GET: Listings/Details/5
-        /*public async Task<IActionResult> Details(int? id)
+        //GET: Listings/Details/5
+         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
             {
@@ -49,117 +52,131 @@ namespace Market.Controllers
         // GET: Listings/Create
         public IActionResult Create()
         {
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id");
             return View();
         }
 
         // POST: Listings/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Description,Price,ImageUrl,isSold,IdentityUserId")] Listing listing)
+        public async Task<IActionResult> Create(ListingVM listing)
         {
-            if (ModelState.IsValid)
+            if (listing.Image != null)
             {
-                _context.Add(listing);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                string uploadDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images");
+                string fileName = listing.Image.FileName;
+                string filePath = Path.Combine(uploadDir, fileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    listing.Image.CopyTo(fileStream);
+                }
+
+                var listObj = new Listing
+                {
+                    Title = listing.Title,
+                    Description = listing.Description,
+                    Price = listing.Price,
+                    IdentityUserId = listing.IdentityUserId,
+                    ImageUrl = fileName,
+                };
+                await _listingsService.Add(listObj);
+                return RedirectToAction("Index");
             }
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", listing.IdentityUserId);
             return View(listing);
         }
 
         // GET: Listings/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        // public async Task<IActionResult> Edit(int? id)
+        // {
+        //     if (id == null)
+        //     {
+        //         return NotFound();
+        //     }
 
-            var listing = await _context.Listings.FindAsync(id);
-            if (listing == null)
-            {
-                return NotFound();
-            }
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", listing.IdentityUserId);
-            return View(listing);
-        }
+        //     var listing = await _context.Listings.FindAsync(id);
+        //     if (listing == null)
+        //     {
+        //         return NotFound();
+        //     }
+        //     ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", listing.IdentityUserId);
+        //     return View(listing);
+        // }
 
         // POST: Listings/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Price,ImageUrl,isSold,IdentityUserId")] Listing listing)
-        {
-            if (id != listing.Id)
-            {
-                return NotFound();
-            }
+        //  To protect from overposting attacks, enable the specific properties you want to bind to.
+        //  For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // [HttpPost]
+        // [ValidateAntiForgeryToken]
+        // public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Price,ImageUrl,isSold,IdentityUserId")] Listing listing)
+        // {
+        //     if (id != listing.Id)
+        //     {
+        //         return NotFound();
+        //     }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(listing);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ListingExists(listing.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", listing.IdentityUserId);
-            return View(listing);
-        }
+        //     if (ModelState.IsValid)
+        //     {
+        //         try
+        //         {
+        //             _context.Update(listing);
+        //             await _context.SaveChangesAsync();
+        //         }
+        //         catch (DbUpdateConcurrencyException)
+        //         {
+        //             if (!ListingExists(listing.Id))
+        //             {
+        //                 return NotFound();
+        //             }
+        //             else
+        //             {
+        //                 throw;
+        //             }
+        //         }
+        //         return RedirectToAction(nameof(Index));
+        //     }
+        //     ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", listing.IdentityUserId);
+        //     return View(listing);
+        // }
 
         // GET: Listings/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        // public async Task<IActionResult> Delete(int? id)
+        // {
+        //     if (id == null)
+        //     {
+        //         return NotFound();
+        //     }
 
-            var listing = await _context.Listings
-                .Include(l => l.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (listing == null)
-            {
-                return NotFound();
-            }
+        //     var listing = await _context.Listings
+        //         .Include(l => l.User)
+        //         .FirstOrDefaultAsync(m => m.Id == id);
+        //     if (listing == null)
+        //     {
+        //         return NotFound();
+        //     }
 
-            return View(listing);
-        }
+        //     return View(listing);
+        // }
 
         // POST: Listings/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var listing = await _context.Listings.FindAsync(id);
-            if (listing != null)
-            {
-                _context.Listings.Remove(listing);
-            }
+        // [HttpPost, ActionName("Delete")]
+        // [ValidateAntiForgeryToken]
+        // public async Task<IActionResult> DeleteConfirmed(int id)
+        // {
+        //     var listing = await _context.Listings.FindAsync(id);
+        //     if (listing != null)
+        //     {
+        //         _context.Listings.Remove(listing);
+        //     }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+        //     await _context.SaveChangesAsync();
+        //     return RedirectToAction(nameof(Index));
+        // }
 
-        private bool ListingExists(int id)
-        {
-            return _context.Listings.Any(e => e.Id == id);
-        }*/
+        // private bool ListingExists(int id)
+        // {
+        //     return _context.Listings.Any(e => e.Id == id);
+        // }
     }
 }

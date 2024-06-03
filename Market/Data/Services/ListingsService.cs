@@ -17,5 +17,11 @@ namespace Market.Data.Services
             return applicationDbContext;
 
         }
+
+       public async Task Add(Listing listing)
+        {
+            _context.Listings.Add(listing);
+            await _context.SaveChangesAsync();
+        }
     }
 }
