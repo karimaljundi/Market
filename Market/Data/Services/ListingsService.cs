@@ -23,5 +23,16 @@ namespace Market.Data.Services
             _context.Listings.Add(listing);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<Listing> GetById(int? id)
+        {
+            var listing = await _context.Listings
+                .Include(l => l.User)
+                .Include(l=>l.Comments)
+                .Include(l =>l.Bids)
+                .ThenInclude(l=>l.User)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            return listing;
+        }
     }
 }

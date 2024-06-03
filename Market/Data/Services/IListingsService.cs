@@ -6,6 +6,7 @@ namespace Market.Data.Services
     {
         IQueryable<Listing> GetListings();
         Task Add(Listing listing);
+        Task <Listing> GetById(int? id);
 
     }
 }

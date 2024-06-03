@@ -38,9 +38,7 @@ namespace Market.Controllers
                 return NotFound();
             }
 
-            var listing = await _context.Listings
-                .Include(l => l.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var listing = await _listingsService.GetById(id);
             if (listing == null)
             {
                 return NotFound();
