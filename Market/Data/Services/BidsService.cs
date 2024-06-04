@@ -1,4 +1,5 @@
 ﻿using Market.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Market.Data.Services
 {
@@ -14,6 +15,13 @@ namespace Market.Data.Services
         {
             _context.Bids.Add(bid);
             await _context.SaveChangesAsync();
+        }
+
+        public IQueryable<Bid> GetBids()
+        {
+            var applicationDbContext = from a in _context.Bids.Include(l => l.Listing).ThenInclude(l => l.User)
+                                       select a;
+            return applicationDbContext;
         }
     }
 }
