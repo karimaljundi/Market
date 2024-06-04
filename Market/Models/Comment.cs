@@ -7,7 +7,7 @@ namespace Market.Models
     public class Comment
     {
         public int Id { get; set; }
-        public string Content { get; set; }
+        public string? Content { get; set; }
         [Required]
         public string? IdentityUserId { get; set; }
         [ForeignKey("IdentityUserId")]
