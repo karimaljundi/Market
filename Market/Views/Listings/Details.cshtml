@@ -61,7 +61,7 @@
                             @bid.User.UserName bidded $@bid.Price.ToString("N2")
                         </ul>
                     }
-
+                }
                 }
                 else
                 {
@@ -80,7 +80,7 @@
                         @if (!Model.isSold)
                         {
                             <a asp-action="CloseBidding" asp-route-id="@Model.Id">Close bidding</a>
-                        }
+                        
                     }
 
                 }

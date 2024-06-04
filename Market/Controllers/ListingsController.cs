@@ -16,11 +16,13 @@ namespace Market.Controllers
         private readonly IListingsService _listingsService;
 
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IBidsService _bidsService;
 
-        public ListingsController(IListingsService ListingService, IWebHostEnvironment webHostEnvironment)
+        public ListingsController(IListingsService ListingService, IWebHostEnvironment webHostEnvironment, IBidsService bidsService)
         {
             _listingsService = ListingService;
             _webHostEnvironment = webHostEnvironment;
+            _bidsService = bidsService;
         }
 
         // GET: Listings
@@ -33,7 +35,9 @@ namespace Market.Controllers
                 applicationDbContext = applicationDbContext.Where(a => a.Title.Contains(searchString));
                 return View(await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.isSold == false).AsNoTracking(), pageNumber ?? 1, pageSize));
             }
-            return View(await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.isSold == false).AsNoTracking(), pageNumber ?? 1, pageSize));
+            return View(await PaginatedList<Listing>.CreateAsync(applicationDbContext
+                //.Where(l => l.isSold == false)
+                .AsNoTracking(), pageNumber ?? 1, pageSize));
         }
 
         //GET: Listings/Details/5
@@ -89,6 +93,27 @@ namespace Market.Controllers
                 return RedirectToAction("Index");
             }
             return View(listing);
+        }
+        [HttpPost]
+        public async Task<ActionResult> AddBid([Bind("Id, Price, ListingId, IdentityUserId")] Bid bid)
+        {
+            if (ModelState.IsValid)
+            {
+                await _bidsService.Add(bid);
+            }
+            var listing = await _listingsService.GetById(bid.ListingId);
+            listing.Price = bid.Price;
+            await _listingsService.SaveChanges();
+
+            return View("Details", listing);
+        }
+        public async Task<ActionResult> CloseBidding(int id)
+        {
+            var listing = await _listingsService.GetById(id);
+            listing.isSold = true;
+            await _listingsService.SaveChanges();
+            return View("Details", listing);
+
         }
 
         // GET: Listings/Edit/5
