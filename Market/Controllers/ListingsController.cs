@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Market.Data;
 using Market.Models;
 using Market.Data.Services;
+using System.Security.Claims;
 
 namespace Market.Controllers
 {
@@ -17,12 +18,16 @@ namespace Market.Controllers
 
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IBidsService _bidsService;
+        private readonly ICommentsServices _commentsService;
 
-        public ListingsController(IListingsService ListingService, IWebHostEnvironment webHostEnvironment, IBidsService bidsService)
+        public ListingsController(IListingsService ListingService, IWebHostEnvironment webHostEnvironment, IBidsService bidsService, ICommentsServices commentsServices)
         {
             _listingsService = ListingService;
             _webHostEnvironment = webHostEnvironment;
             _bidsService = bidsService;
+            _commentsService = commentsServices;
+
+
         }
 
         // GET: Listings
@@ -39,7 +44,13 @@ namespace Market.Controllers
                 //.Where(l => l.isSold == false)
                 .AsNoTracking(), pageNumber ?? 1, pageSize));
         }
+        public async Task<IActionResult> MyListings(int? pageNumber)
+        {
+            var applicationDbContext = _listingsService.GetListings();
+            int pageSize = 3;
 
+            return View("Index", await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.IdentityUserId == User.FindFirstValue(ClaimTypes.NameIdentifier)).AsNoTracking(), pageNumber ?? 1, pageSize));
+        }
         //GET: Listings/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -115,7 +126,16 @@ namespace Market.Controllers
             return View("Details", listing);
 
         }
-
+        [HttpPost]
+        public async Task<ActionResult> AddComment([Bind("Id, Content, ListingId, IdentityUserId")] Comment comment)
+        {
+            if (ModelState.IsValid)
+            {
+                await _commentsService.Add(comment);
+            }
+            var listing = await _listingsService.GetById(comment.ListingId);
+            return View("Details", listing);
+        }
         // GET: Listings/Edit/5
         // public async Task<IActionResult> Edit(int? id)
         // {
