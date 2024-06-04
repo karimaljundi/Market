@@ -24,14 +24,20 @@ namespace Market.Controllers
         }
 
         // GET: Listings
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? pageNumber, string searchString)
         {
             var applicationDbContext = _listingsService.GetListings();
-            return View(await applicationDbContext.ToListAsync());
+            int pageSize = 3;
+            if(!String.IsNullOrEmpty(searchString))
+            {
+                applicationDbContext = applicationDbContext.Where(a => a.Title.Contains(searchString));
+                return View(await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.isSold == false).AsNoTracking(), pageNumber ?? 1, pageSize));
+            }
+            return View(await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.isSold == false).AsNoTracking(), pageNumber ?? 1, pageSize));
         }
 
         //GET: Listings/Details/5
-         public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
             {
